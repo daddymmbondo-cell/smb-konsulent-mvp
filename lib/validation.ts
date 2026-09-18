@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AssessmentAnswer } from "@prisma/client";
 
 // Leadskjema (forside/kontakt) — validert både klient- og serversiden.
 // .strict() avviser uventede felter, som krevd i spesifikasjonen.
@@ -104,3 +105,23 @@ export const assessmentSchema = z
   .strict();
 
 export type AssessmentInput = z.infer<typeof assessmentSchema>;
+
+// Prisma sine valgfrie felter er typet `T | null` (ubesvarte spørsmål lagres
+// som NULL i databasen), mens Zod sine `.optional()`-felter er typet
+// `T | undefined`. Disse to er ikke det samme for TypeScript, så vi må
+// forhåndsutfylle AssessmentWizard med lagrede svar ved å konvertere
+// `null` → `undefined` og fjerne Prisma-felter som ikke er del av skjemaet
+// (id, assessmentId, updatedAt).
+export function toAssessmentFormValues(
+  answers: AssessmentAnswer | null | undefined
+): Partial<AssessmentInput> {
+  if (!answers) return {};
+
+  const { id: _id, assessmentId: _assessmentId, updatedAt: _updatedAt, ...rest } = answers;
+
+  const values: Partial<AssessmentInput> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    (values as Record<string, unknown>)[key] = value ?? undefined;
+  }
+  return values;
+}

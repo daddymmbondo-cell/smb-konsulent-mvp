@@ -1,6 +1,7 @@
 import { requireCustomerSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { AssessmentWizard } from "@/components/assessment-wizard";
+import { toAssessmentFormValues } from "@/lib/validation";
 
 export const metadata = { title: "Kartlegging" };
 
@@ -30,7 +31,7 @@ export default async function KartleggingPage() {
       <div className="mt-8">
         <AssessmentWizard
           assessmentId={assessment.id}
-          initialValues={assessment.answers ?? {}}
+          initialValues={toAssessmentFormValues(assessment.answers)}
         />
       </div>
     </main>
