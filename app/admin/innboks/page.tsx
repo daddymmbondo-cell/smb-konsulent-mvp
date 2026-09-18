@@ -1,6 +1,7 @@
 import { requireAdminSession } from "@/lib/session";
 import { isMicrosoftIntegrationEnabled } from "@/lib/graph/client";
 import { listRecentInboxMessages } from "@/lib/graph/calendar";
+import type { GraphMailMessage } from "@/lib/graph/calendar";
 import { InboxMessageRow } from "@/components/inbox-message-row";
 
 export const metadata = { title: "Innboks — Administrator" };
@@ -25,7 +26,7 @@ export default async function InnboksPage() {
     );
   }
 
-  let messages;
+  let messages: GraphMailMessage[];
   let errorMessage: string | null = null;
   try {
     messages = await listRecentInboxMessages(20);
