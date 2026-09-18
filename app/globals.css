@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-surface text-slate-800 antialiased;
+}
+
+.input {
+  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm;
+  @apply focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand;
+}
+
+/* Synlig fokusmarkering for tastaturnavigasjon (universell utforming) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid theme("colors.growth.DEFAULT");
+  outline-offset: 2px;
+}

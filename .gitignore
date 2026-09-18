@@ -1,0 +1,44 @@
+# Avhengigheter
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js build-output
+/.next/
+/out/
+/build
+
+# Miljøvariabler — INNEHOLDER HEMMELIGHETER, skal aldri committes
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# NB: prisma/migrations/ skal IKKE stå her — migrasjonsfilene må committes
+# til Git, ellers fungerer ikke `npx prisma migrate deploy` i produksjon.
+
+# Vercel
+.vercel
+
+# Testing
+/coverage
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Editor/OS
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# Logg
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

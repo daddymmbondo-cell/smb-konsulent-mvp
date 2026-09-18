@@ -1,0 +1,278 @@
+// Prisma-skjema — kun modellene som trengs for kjerneflyten i MVP-en:
+// Forside -> kontaktskjema -> kartleggingssamtale -> kundeportal -> kartlegging -> rapport -> oppfølging
+//
+// Flere modeller fra full-spesifikasjonen (Message, Document, AuditLog, Notification, osv.)
+// er bevisst utelatt i denne første versjonen og legges til i senere faser.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon (og andre tilkoblingspoolede Postgres-tjenester) krever en egen,
+  // ikke-poolet tilkobling for migrasjoner. DATABASE_URL peker på Neons
+  // poolede tilkobling (host med "-pooler", brukes av selve appen i
+  // produksjon/serverless), DIRECT_URL på den direkte (brukes kun av
+  // `prisma migrate`). Lokalt (Docker Postgres) kan begge peke på samme URL.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum LeadStatus {
+  NY
+  KONTAKTET
+  MOTE_BOOKET
+  TILBUD_SENDT
+  VUNNET
+  TAPT
+}
+
+enum SuggestedLeadStatus {
+  FORESLATT   // hentet fra register, ikke vurdert ennå
+  GODKJENT    // admin har vurdert og godkjent for kontakt
+  KONVERTERT  // omgjort til et faktisk Lead
+  AVVIST      // admin har vurdert og valgt å ikke kontakte
+}
+
+enum AssessmentStatus {
+  UTKAST
+  INNSENDT
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  orgNumber String? // organisasjonsnummer, plassholder
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     OrganizationMember[]
+  assessments Assessment[]
+  bookings    Booking[]
+
+  @@index([name])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships OrganizationMember[]
+  recommendationsCreated Recommendation[] @relation("RecommendationAuthor")
+  suggestedLeadsReviewed SuggestedLead[]  @relation("SuggestedLeadReviewer")
+  emailDraftsApproved    EmailDraft[]     @relation("EmailDraftApprover")
+
+  @@index([email])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// Kontaktskjema / lead fra forsiden
+model Lead {
+  id              String     @id @default(cuid())
+  name            String
+  businessName    String
+  email           String
+  phone           String
+  businessType    String?
+  employeeCount   String?
+  revenueRange    String?
+  biggestChallenge String?
+  message         String?
+  consentGiven    Boolean    @default(false)
+  status          LeadStatus @default(NY)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  booking Booking?
+
+  @@index([status])
+  @@index([email])
+}
+
+// Uforpliktende kartleggingssamtale (enkel intern bookingmodell —
+// abstrahert slik at Calendly/Google Calendar/M365 kan kobles til senere)
+model Booking {
+  id              String   @id @default(cuid())
+  leadId          String   @unique
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  preferredTime   String // fritekst i MVP: "Ønsket tidspunkt"
+  confirmedTime   DateTime?
+  externalCalendarRef String? // plassholder for fremtidig kalenderintegrasjon
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Lønnsomhets- og driftskartlegging (del A-F, lagret som strukturert JSON i MVP)
+model Assessment {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         AssessmentStatus  @default(UTKAST)
+  answers        AssessmentAnswer?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  submittedAt    DateTime?
+
+  metrics         Metric[]
+  recommendations Recommendation[]
+
+  @@index([organizationId])
+}
+
+// Rådataene fra skjemaet, delt inn etter del A-F i spesifikasjonen
+model AssessmentAnswer {
+  id           String     @id @default(cuid())
+  assessmentId String     @unique
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  // Del A: Virksomhet
+  businessType    String?
+  employeeCount   Int?
+  locationCount   Int?
+  openingHours    String?
+  region          String?
+  businessModel   String?
+
+  // Del B: Salg
+  monthlyRevenue   Float?
+  salesTrend       String?
+  averagePurchase  Float?
+  mainRevenueSource String?
+  seasonality      String?
+
+  // Del C: Kostnader
+  laborCost      Float?
+  rentCost       Float?
+  goodsCost      Float?
+  electricityCost Float?
+  transportCost  Float?
+  marketingCost  Float?
+  otherFixedCosts Float?
+
+  // Del D: Drift
+  shrinkage           Float? // svinn i kr
+  staffingChallenges   String?
+  sickLeavePercent     Float?
+  inventoryChallenges  String?
+  purchasingRoutines   String?
+  digitalToolsUsage    String?
+
+  // Del E: Ledelse
+  managerCount        Int?
+  managementChallenges String?
+  staffFollowUp        String?
+  training              String?
+  goalManagement        String?
+  meetingRoutines        String?
+
+  // Del F: Mål
+  goals90Days     String?
+  desiredImprovement String?
+  mainObstacle    String?
+  desiredHelp     String?
+
+  updatedAt DateTime @updatedAt
+}
+
+// Beregnede nøkkeltall (dekningsbidrag, kostnadsandel osv.)
+model Metric {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  key          String // f.eks. "bruttofortjenestemargin"
+  value        Float?
+  isEstimate   Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@index([assessmentId, key])
+}
+
+model Recommendation {
+  id            String     @id @default(cuid())
+  assessmentId  String
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  title         String
+  problem       String
+  whyItMatters  String
+  action        String
+  effort        String
+  priority      Int // 1 = høyest
+  firstStep     String
+  whatToMeasure String
+  createdById   String?
+  createdBy     User?      @relation("RecommendationAuthor", fields: [createdById], references: [id])
+  createdAt     DateTime   @default(now())
+
+  @@index([assessmentId])
+}
+
+// Kundeemner hentet fra åpne, offentlige registre (Brønnøysundregisteret).
+// Dette er IKKE et lead før en administrator aktivt har vurdert og godkjent det —
+// se §"skaffe kunde" i prosjektreglene: ingen automatisk utsendelse uten godkjenning.
+model SuggestedLead {
+  id                String              @id @default(cuid())
+  orgNumber         String              @unique // organisasjonsnummer fra Enhetsregisteret
+  name              String
+  naceCode          String? // næringskode, f.eks. "47.11"
+  naceDescription   String?
+  municipality      String?
+  employeeCountFrom Int?
+  website           String?
+  status            SuggestedLeadStatus @default(FORESLATT)
+  sourceQuery       String // hvilket søk som fant dette emnet, for sporbarhet
+  convertedLeadId   String?             @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  reviewedById      String?
+  reviewedBy        User?               @relation("SuggestedLeadReviewer", fields: [reviewedById], references: [id])
+  reviewedAt        DateTime?
+
+  emailDrafts EmailDraft[]
+
+  @@index([status])
+  @@index([naceCode])
+}
+
+// E-postutkast generert av "coworker"-modulen. ALDRI sendt automatisk —
+// en administrator må aktivt trykke "send" (og da via en tilkoblet e-postkonto).
+model EmailDraft {
+  id              String         @id @default(cuid())
+  suggestedLeadId String?
+  suggestedLead   SuggestedLead? @relation(fields: [suggestedLeadId], references: [id], onDelete: SetNull)
+  leadId          String?
+  purpose         String // f.eks. "forstekontakt", "svar-innkommende", "oppfolging"
+  subject         String
+  body            String
+  status          String         @default("UTKAST") // UTKAST | GODKJENT | SENDT | FORKASTET
+  createdAt       DateTime       @default(now())
+  approvedById    String?
+  approvedBy      User?          @relation("EmailDraftApprover", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  sentAt          DateTime?
+
+  @@index([status])
+}
