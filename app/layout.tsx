@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { PwaRegister } from "@/components/pwa-register";
 import { SITE_NAME } from "@/lib/content/site";
 
 export const metadata: Metadata = {
@@ -17,6 +18,18 @@ export const metadata: Metadata = {
     locale: "nb_NO",
     type: "website",
   },
+  // Gjør nettsiden installerbar ("Legg til på Hjem-skjerm") på iPhone/iPad —
+  // iOS bruker ikke web app manifest-et for disse metatagene, så de må settes
+  // eksplisitt her. app/manifest.ts dekker Android/Chrome-installasjon.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: SITE_NAME,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0F2A43",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="nb">
       <body>
         <Providers>{children}</Providers>
+        <PwaRegister />
       </body>
     </html>
   );
