@@ -39,11 +39,6 @@ export default function PriserPage() {
             </div>
           ))}
         </div>
-
-        <p className="mt-10 text-xs text-slate-400">
-          Prisene over er plassholdere inntil de er satt. Rediger dem i{" "}
-          <code className="rounded bg-slate-100 px-1.5 py-0.5">lib/content/pricing.ts</code>.
-        </p>
       </main>
       <SiteFooter />
     </>
