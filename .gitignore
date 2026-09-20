@@ -15,6 +15,7 @@
 .env.development
 .env.production
 .env.test
+neon-admin-secret.local
 
 # NB: prisma/migrations/ skal IKKE stå her — migrasjonsfilene må committes
 # til Git, ellers fungerer ikke `npx prisma migrate deploy` i produksjon.
