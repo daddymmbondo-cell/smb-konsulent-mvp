@@ -78,7 +78,7 @@ export default async function RapportPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-brand-dark">Tre prioriterte tiltak</h2>
+        <h2 className="font-semibold text-brand-dark">Prioriterte tiltak</h2>
         <ol className="mt-3 space-y-4">
           {top3.map((r, i) => (
             <li key={r.id} className="rounded-xl border border-slate-200 p-4">
@@ -106,8 +106,11 @@ export default async function RapportPage() {
       <section className="mt-10">
         <h2 className="font-semibold text-brand-dark">Videre oppfølging</h2>
         <p className="mt-2 text-sm text-slate-600">
-          30-dagers plan: start med tiltak 1 over. 90-dagers plan: følg opp alle tre tiltakene og bestill en
-          oppfølgingssamtale for å vurdere fremgang.
+          {top3.length > 0
+            ? `30-dagers plan: start med tiltak 1 over. 90-dagers plan: følg opp ${
+                top3.length === 1 ? "tiltaket" : "tiltakene"
+              } over og bestill en oppfølgingssamtale for å vurdere fremgang.`
+            : "Ingen spesifikke tiltak ble utløst denne gangen. Bestill gjerne en oppfølgingssamtale for en nærmere gjennomgang av tallene."}
         </p>
         <Link
           href="/bestill-samtale"
