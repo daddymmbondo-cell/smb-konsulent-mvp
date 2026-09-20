@@ -138,6 +138,22 @@ export function calculateShrinkageShare(f: AssessmentFinancials): CalculatedMetr
   };
 }
 
+// Statisk oppslag av label/enhet per nøkkeltall-key. Brukes til å tolke
+// lagrede Metric-rader (som kun har key+value) uten å regne dem på nytt —
+// f.eks. for utviklingsoversikten som viser flere tidligere kartlegginger.
+// Må holdes i sync med calculateAllMetrics() under.
+export const METRIC_META: Record<string, { label: string; unit: "kr" | "%" | "andel" }> = {
+  bruttofortjeneste: { label: "Bruttofortjeneste", unit: "kr" },
+  bruttofortjenestemargin: { label: "Bruttofortjenestemargin", unit: "%" },
+  personalkostnadsandel: { label: "Personalkostnadsandel", unit: "%" },
+  kostnadsandel: { label: "Kostnadsandel", unit: "%" },
+  estimert_driftsresultat: { label: "Estimert driftsresultat", unit: "kr" },
+  svinnandel: { label: "Svinnandel", unit: "%" },
+};
+
+// Rekkefølgen nøkkeltallene skal vises i på tvers av oversikts- og rapportsider.
+export const METRIC_KEY_ORDER = Object.keys(METRIC_META);
+
 export function calculateAllMetrics(f: AssessmentFinancials): CalculatedMetric[] {
   return [
     calculateGrossProfit(f),

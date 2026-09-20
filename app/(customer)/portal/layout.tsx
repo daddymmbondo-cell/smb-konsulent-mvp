@@ -10,6 +10,14 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <Link href="/portal" className="text-lg font-semibold text-brand-dark">
             {SITE_NAME} — Kundeportal
           </Link>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 sm:flex">
+            <Link href="/portal" className="hover:text-brand">
+              Oversikt
+            </Link>
+            <Link href="/portal/utvikling" className="hover:text-brand">
+              Utvikling
+            </Link>
+          </nav>
           <SignOutButton />
         </div>
       </header>

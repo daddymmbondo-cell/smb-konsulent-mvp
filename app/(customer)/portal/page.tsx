@@ -79,6 +79,20 @@ export default async function PortalPage() {
             >
               Se full rapport
             </Link>
+            {latestAssessment.status === "INNSENDT" && (
+              <Link
+                href="/portal/kartlegging"
+                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-brand-dark hover:bg-slate-50"
+              >
+                Start ny kartlegging
+              </Link>
+            )}
+            <Link
+              href="/portal/utvikling"
+              className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-brand-dark hover:bg-slate-50"
+            >
+              Se utvikling over tid
+            </Link>
           </div>
 
           {latestAssessment.recommendations.length > 0 && (
