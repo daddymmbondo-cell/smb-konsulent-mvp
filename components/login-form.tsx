@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/lib/validation";
@@ -35,7 +35,14 @@ export function LoginForm() {
       setError("Feil e-post eller passord.");
       return;
     }
-    router.push("/portal");
+
+    // Adminbrukere har ingen organisasjon knyttet til seg og skal derfor
+    // ikke sendes til kundeportalen (/portal), som krever et
+    // organisasjonsmedlemskap og ellers sender dem rett tilbake hit.
+    const session = await getSession();
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    router.push(role === "ADMIN" ? "/admin/dashboard" : "/portal");
+    router.refresh();
   }
 
   return (
